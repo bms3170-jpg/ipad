@@ -1,0 +1,31 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useFocusStore } from "../../stores/focusStore";
+import { useMusicStore } from "../../stores/musicStore";
+import { useNoteStore } from "../../stores/noteStore";
+import { useScheduleStore } from "../../stores/scheduleStore";
+import { useTaskStore } from "../../stores/taskStore";
+import { useWeatherStore } from "../../stores/weatherStore";
+import { localDateKey, minutesFromTime } from "../../utils/date";
+
+const WEEK=["S","M","T","W","T","F","S"];
+
+export function ScrapbookHome(){
+ const nav=useNavigate();const [now,setNow]=useState(new Date());const tasks=useTaskStore(s=>s.tasks);const toggle=useTaskStore(s=>s.toggleTask);const add=useTaskStore(s=>s.addTask);const schedules=useScheduleStore(s=>s.schedules);const notes=useNoteStore(s=>s.notes);const weather=useWeatherStore(s=>s.snapshot);const load=useWeatherStore(s=>s.load);const music=useMusicStore();const focus=useFocusStore();
+ useEffect(()=>{const id=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(id)},[]);useEffect(()=>{load()},[load]);const key=localDateKey(now);const list=useMemo(()=>tasks.filter(x=>x.date===key&&!x.deletedAt).slice(0,7),[tasks,key]);const done=list.filter(x=>x.completed).length;const day=schedules.filter(x=>x.date===key&&!x.deletedAt).sort((a,b)=>a.startTime.localeCompare(b.startTime));const min=now.getHours()*60+now.getMinutes();const current=day.find(x=>minutesFromTime(x.startTime)<=min&&minutesFromTime(x.endTime)>min);const next=day.find(x=>minutesFromTime(x.startTime)>min);const note=notes.find(x=>!x.hidden&&!x.deletedAt);const first=new Date(now.getFullYear(),now.getMonth(),1).getDay();const days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+ return <section className="paper-home">
+  <aside className="paper-menu"><header><b>Paper<br/><span>OS</span></b><small>PERSONAL SYSTEM</small><p>Write a<br/>Better Tomorrow.</p></header><nav>{[["⌂","Home","/"],["☑","Todo","/today"],["31","Calendar","/calendar"],["▤","Note","/notes"],["▣","Photo","/gallery"],["♫","Music","/music"],["◎","Web","/"],["□","Files","/"],["⚙","Setting","/settings"]].map(([i,n,p])=><button key={n} className={n==="Home"?"active":""} onClick={()=>nav(p)}><b>{i}</b>{n}</button>)}</nav><footer>Good<br/>Things<br/>Take<br/>Time.　⌁</footer></aside>
+  <article className="paper-photo"><div className="paper-window"><span>오늘도,<br/>나답게,<br/>조금 더 멋지게. ♡</span><div className="paper-city"/><div className="paper-cat">⌒•ᴥ•⌒</div></div><footer>{now.toLocaleDateString("en-CA").replaceAll("-"," . ")} ({now.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase()}) ♡</footer></article>
+  <article className="paper-card paper-time"><label>TIME</label><strong>{now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</strong><b>{now.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"2-digit",year:"numeric"})}</b><p>오늘도, 좋은 하루. ♡</p></article>
+  <article className="paper-card paper-weather" onClick={()=>load(true)}><label>WEATHER</label><div><i>⛅</i><strong>{weather?.temperature??24}°</strong><p>H : {weather?.high??26}°<br/>L : {weather?.low??18}°<br/>HUM : 42%<br/>WIND : 2m/s</p></div><b>{weather?.description??"맑음"}<small>SEOUL, KR</small></b></article>
+  <aside className="paper-habit">Same<br/>Habits<br/>A Brighter<br/>You. ♡</aside>
+  <article className="paper-card paper-music"><label>MUSIC</label><div className="paper-album"><i/></div><section><b>{music.title}</b><span>{music.artist}</span><em><i style={{width:`${Math.max(25,music.progress)}%`}}/></em><small>1:27　　　　　　　　　-2:18</small><div><button>◀</button><button onClick={music.togglePlay}>{music.playing?"Ⅱ":"▶"}</button><button onClick={()=>nav("/music")}>▶</button></div></section><p>Good Music<br/>Better Day!</p></article>
+  <article className="paper-card paper-calendar" onClick={()=>nav("/calendar")}><label>CALENDAR</label><header><b>‹</b><span>{now.getFullYear()}. {String(now.getMonth()+1).padStart(2,"0")}</span><b>›</b></header><div className="paper-week">{WEEK.map((x,i)=><b key={`${x}${i}`}>{x}</b>)}</div><div className="paper-month">{Array.from({length:first}).map((_,i)=><i key={i}/>)}{Array.from({length:days},(_,i)=>i+1).map(d=><span className={d===now.getDate()?"today":""} key={d}>{d}</span>)}</div><small>A New Day<br/>A Better You. ♡</small></article>
+  <article className="paper-card paper-tasks"><label>TODAY TASKS</label><header>{done} / {list.length||0}</header><div>{list.map(x=><button key={x.id} className={x.completed?"done":""} onClick={()=>toggle(x.id)}><i>{x.completed?"✓":""}</i>{x.title}</button>)}</div><footer><button onClick={()=>void add({title:"새로운 할 일"})}>＋ 새로운 할 일 추가하기</button></footer><span>⌁</span></article>
+  <article className="paper-card paper-note" onClick={()=>nav("/notes")}><label>QUICK NOTE</label><p>{note?.content||"지금도 충분히 잘하고 있어.\n오늘도, 좋은 하루. ♡"}</p></article>
+  <article className="paper-card paper-memory" onClick={()=>nav("/gallery")}><label>MEMORY STRIP</label><div>{[1,2,3,4,5].map(x=><i key={x}/>)}</div><small>A Page A Day, A Better Me.</small></article>
+  <article className="paper-card paper-focus"><label>FOCUS TIMER</label><div className="paper-ring"><b>{focus.active?`${Math.floor(focus.remainingSeconds()/60)}:${String(focus.remainingSeconds()%60).padStart(2,"0")}`:"25:00"}</b></div><section><button onClick={()=>focus.start(25,"Focus")}>▶　Focus</button><button onClick={()=>focus.start(5,"Short Break")}>♨　Short Break</button><button onClick={()=>focus.start(15,"Long Break")}>⟳　Long Break</button></section><small>Focus Now,<br/>A Better Tomorrow.</small></article>
+  <article className="paper-card paper-now"><label>NOW / NEXT</label><span>NOW</span><b>{current?.title||"FREE TIME"}</b><p>{current?`${current.startTime} — ${current.endTime}`:"오늘 남은 일정 없음"}</p><span>NEXT</span><strong>{next?`${next.startTime} · ${next.title}`:"-"}</strong></article>
+  <footer className="paper-dock">{[["◎","Browser","/"],["▣","Photos","/gallery"],["31","Calendar","/calendar"],["♫","Music","/music"],["◉","ChatGPT","/"],["■","Files","/"],["▤","Notes","/notes"]].map(([i,n,p])=><button key={n} onClick={()=>nav(p)}><b>{i}</b><span>{n}</span></button>)}</footer>
+ </section>
+}

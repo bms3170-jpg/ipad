@@ -1,0 +1,27 @@
+import { useEffect,useMemo,useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useFocusStore } from "../../stores/focusStore";
+import { useMusicStore } from "../../stores/musicStore";
+import { useScheduleStore } from "../../stores/scheduleStore";
+import { useTaskStore } from "../../stores/taskStore";
+import { useWeatherStore } from "../../stores/weatherStore";
+import { localDateKey } from "../../utils/date";
+
+export function BlueprintHome(){
+ const nav=useNavigate();const [now,setNow]=useState(new Date());const tasks=useTaskStore(s=>s.tasks);const toggle=useTaskStore(s=>s.toggleTask);const events=useScheduleStore(s=>s.schedules);const weather=useWeatherStore(s=>s.snapshot);const load=useWeatherStore(s=>s.load);const music=useMusicStore();const focus=useFocusStore();
+ useEffect(()=>{const id=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(id)},[]);useEffect(()=>{load()},[load]);const key=localDateKey(now);const list=useMemo(()=>tasks.filter(x=>x.date===key&&!x.deletedAt).slice(0,6),[tasks,key]);const schedule=events.filter(x=>x.date===key&&!x.deletedAt).sort((a,b)=>a.startTime.localeCompare(b.startTime)).slice(0,7);const done=list.filter(x=>x.completed).length;const time=now.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",hour12:false});
+ return <section className="blue-home">
+  <header className="blue-head"><div><h1>THEME 03 · BLUEPRINT CAD</h1><p>IDEAS × PLANS × A BETTER TOMORROW<br/><small>DIGITAL TOOL. A MORE CREATIVE YOU.</small></p></div><div>IPAD DASHBOARD SYSTEM v1.0<br/><small>Designed for a Focused Life</small></div><b>PLAN<br/>DESIGN<br/>DO<br/>REPEAT</b></header>
+  <article className="blue-panel blue-clock"><p>좋은 설계가, 좋은 하루를 만든다.</p><strong>{time}</strong><b>{now.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"short"})}</b><small>“오늘도, 더 나은 나를 설계하는 하루.”</small></article>
+  <article className="blue-compass"><div><b>N</b><b>E</b><b>S</b><b>W</b><span>TODAY<br/>A BRIGHTER<br/>VERSION OF<br/>YOU</span></div><p>작은 계획이<br/>큰 변화를 만든다.<br/><small>EXPLORE<br/>DESIGN<br/>FOCUS<br/>BUILD<br/>REPEAT</small></p></article>
+  <article className="blue-panel blue-weather"><header>WEATHER　// 현재 날씨</header><div><i>☀</i><strong>{weather?.temperature??22}°C</strong><p>서울특별시<br/>{weather?.description??"맑음"}</p></div><footer>H: {weather?.high??24}°C　 L: {weather?.low??14}°C　 습도 42%　 바람 NW 3m/s</footer><section>{["토","일","월","화"].map((d,i)=><span key={d}>{d}<b>{23-i}°/{15-i}°</b></span>)}</section></article>
+  <aside className="blue-measure"><b>KEY MEASUREMENTS</b><small>UNIT : MM</small><div>◇ 12<br/>◇ 24<br/>◇ 36<br/>◇ 48<br/>◇ 60</div><p>BETTER<br/>TOOLS<br/>A BRIGHTER<br/>TOMORROW</p></aside>
+  <article className="blue-panel blue-todo"><header>TO-DO LIST　// 오늘 할 일</header><div>{list.map(x=><button key={x.id} onClick={()=>toggle(x.id)}><i>{x.completed?"✓":""}</i>{x.title}</button>)}</div><aside><div><b>{done}/{list.length||0}</b><small>{list.length?Math.round(done/list.length*100):0}%</small></div><p>○ 계획<br/>○ 실행<br/>○ 성장</p></aside><footer onClick={()=>nav("/today")}>＋　할 일 추가하기</footer></article>
+  <article className="blue-panel blue-timeline"><header>TODAY TIMELINE　// 오늘의 일정</header><div>{schedule.length?schedule.map(x=><p key={x.id}><time>{x.startTime}</time><span>{x.title}</span></p>):<p><time>--:--</time><span>등록된 일정 없음</span></p>}</div><aside><div className="device-wire"><i/><i/><i/></div><small>IPAD<br/>A SMALL DEVICE<br/>FOR A BIGGER TOMORROW.</small><b>SCALE 1:2<br/>UNIT : MM</b></aside></article>
+  <article className="blue-panel blue-music"><header>MUSIC PLAYER　// 지금, 이 순간</header><div><div className="blue-album">◐</div><section><b>{music.title}</b><span>{music.artist}</span><em>♡</em></section></div><div className="blue-progress"><i style={{width:`${Math.max(22,music.progress)}%`}}/></div><footer><button>⤨</button><button>◀</button><button className="round" onClick={music.togglePlay}>{music.playing?"Ⅱ":"▶"}</button><button onClick={()=>nav("/music")}>▶</button><button>⟳</button></footer></article>
+  <article className="blue-panel blue-focus"><header>FOCUS TIMER　// 집중 타이머</header><div><section><b>FOCUS</b><strong>{focus.active?`${Math.floor(focus.remainingSeconds()/60)}:${String(focus.remainingSeconds()%60).padStart(2,"0")}`:"25:00"}</strong><button onClick={()=>focus.start(25,"Focus")}>▶</button></section><p>○ 포커스　25분<br/><br/>○ 짧은 휴식　5분<br/><br/>○ 긴 휴식　15분</p></div><footer>“지금의 집중이,<br/>내일의 가능성을 설계한다.”</footer></article>
+  <article className="blue-panel blue-device"><header>DEVICE STATUS　// 기기 상태</header><div className="ipad-wire">⌁<i/><i/></div><section><div>▣ <b>78%</b><small>iPad 배터리 상태</small></div><div>▤ <b>64%</b><small>저장 공간</small></div><div>◉ <b>연결됨</b><small>Wi-Fi</small></div><div>╱ <b>100%</b><small>Apple Pencil</small></div></section></article>
+  <article className="blue-panel blue-apps"><header>APP SHORTCUTS　// 자주 쓰는 앱</header><div>{[["≡","GoodNotes"],["N","Notion"],["◈","Safari"],["✿","Photos"],["▶","YouTube"],["✉","Mail"],["□","Files"],["A","App Store"]].map(([i,n])=><button key={n} onClick={()=>n==="Photos"&&nav("/gallery")}><b>{i}</b><span>{n}</span></button>)}</div></article>
+  <footer className="blue-foot"><p>DESIGN A CLEARER TODAY.<br/>FOR A BRIGHTER TOMORROW.</p><div>THEME SELECTOR　// 테마 선택　 <button>01</button><button>02</button><button className="active">03</button><button>04</button><button>05</button></div><p>SAME DEVICE.<br/>A WIDER TOMORROW.</p></footer>
+ </section>
+}
